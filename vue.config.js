@@ -7,6 +7,7 @@ const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 
 module.exports = defineConfig({
   transpileDependencies: true,
+
   configureWebpack: {
     plugins: [
       new NodePolyfillPlugin(),
@@ -15,10 +16,19 @@ module.exports = defineConfig({
       new CompressionPlugin({ test: /\.js$|\.html$|\.css/, threshold: 10240 }), // 压缩
     ],
   },
+
   outputDir: "./dist/",
   assetsDir: "ai",
+
   devServer: {
     allowedHosts: "all",
     port: 8088,
   },
+
+  pluginOptions: {
+    'style-resources-loader': {
+      preProcessor: 'less',
+      patterns: []
+    }
+  }
 });
