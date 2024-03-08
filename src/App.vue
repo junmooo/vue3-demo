@@ -1,6 +1,6 @@
 <template>
   <div id="app" v-loading="loading">
-    <h1>WebSocket Chat</h1>
+    <!-- <h1>WebSocket Chat</h1> -->
     <RefreshComp @refresh="refresh" />
     <div style="position: fixed; inset-block-end: 50px">
       <el-input v-model="question" clearable placeholder="请输入你的问题" size="large"
@@ -9,7 +9,7 @@
         确认
       </el-button>
     </div>
-    <ChatContainer />
+    <ChatContainer :messages="messages" />
   </div>
 </template>
 
@@ -33,11 +33,11 @@ export default {
       loading: false,
     };
   },
-  provide() {
-    return {
-      messages: this.messages
-    }
-  },
+  // provide() {
+  //   return {
+  //     messages: this.messages
+  //   }
+  // },
   components: {
     RefreshComp,
     ChatContainer
@@ -54,7 +54,7 @@ export default {
       });
     },
     refresh() {
-      console.log("refresh", 72);
+      console.log("refresh", 72, this.messages);
       this.messages = {};
     },
     initWebSocket() {
@@ -141,6 +141,8 @@ export default {
       );
     },
     websocketonerror(e) {
+      this.reset();
+      this.loading = false;
       console.log("WebSocket连接发生错误" + e);
     },
     websocketclose() {

@@ -1,6 +1,16 @@
 <script>
 export default {
-  inject: ['messages'],
+  data() {
+    return {
+    };
+  },
+  // inject: ['messages'],
+  props: {
+    messages: Object
+  },
+  mounted() {
+    console.log(this.messages);
+  },
 }
 </script>
 
@@ -23,7 +33,7 @@ export default {
 
 <style lang='less' scoped>
 .chatCtn {
-  height: calc(90vh - 160px);
+  height: calc(90vh - 60px);
   inline-size: 100vw;
   display: flex;
   justify-self: center;
