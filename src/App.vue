@@ -69,6 +69,9 @@ export default {
   mounted() {
     this.initWebSocket(); // userId为socket链接的参数
   },
+  unmounted() {
+    this.websocket.close();
+  },
   methods: {
     initWebSocket() {
       // WebSocket与普通的请求所用协议有所不同，ws等同于http，wss等同于https
@@ -119,6 +122,7 @@ export default {
     async setOnmessageMessage(event) {
       if (event.data === "!$over$!") {
         console.log("这一轮对话结束！");
+        // this.closeWebSocket();
         this.question = null;
       } else if (event.data === "alive") {
         console.log("heartBath", "alive");
