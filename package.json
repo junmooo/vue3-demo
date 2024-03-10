@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "dev": "vue-cli-service serve --mode development",
     "build": "vue-cli-service build --mode production",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "dev": "vue-cli-service serve --mode development"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
+    "@kangc/v-md-editor": "^2.3.18",
     "core-js": "^3.8.3",
     "dotenv": "^16.3.1",
     "element-plus": "^2.4.3",
@@ -27,8 +28,12 @@
     "compression-webpack-plugin": "^10.0.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
+    "less": "^4.2.0",
+    "less-loader": "^12.2.0",
+    "style-resources-loader": "^1.4.1",
     "unplugin-auto-import": "^0.16.2",
-    "unplugin-vue-components": "^0.25.0"
+    "unplugin-vue-components": "^0.25.0",
+    "vue-cli-plugin-style-resources-loader": "~0.1.5"
   },
   "eslintConfig": {
     "root": true,

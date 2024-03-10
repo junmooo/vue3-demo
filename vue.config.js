@@ -7,6 +7,7 @@ const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 module.exports = defineConfig({
   // 是否将第三方依赖库翻译成 JS。如果设置为 true，将会编译所有依赖库，可能导致打包体积增大
   transpileDependencies: true,
+
   configureWebpack: {
     // optimization: {
     //   splitChunks: {
@@ -27,10 +28,19 @@ module.exports = defineConfig({
       new CompressionPlugin({ test: /\.js$|\.html$|\.css/, threshold: 10240 }), // 压缩
     ],
   },
-  outputDir: "./dist/", // 生成的构建文件夹
-  assetsDir: "ai", // 存储资源文件的子文件夹
+
+  outputDir: "./dist/",
+  assetsDir: "ai",
+
   devServer: {
     allowedHosts: "all", // 允许所有的主机访问开发服务器
     port: 8088, // 开发服务器的端口
+  },
+
+  pluginOptions: {
+    "style-resources-loader": {
+      preProcessor: "less",
+      patterns: [],
+    },
   },
 });
