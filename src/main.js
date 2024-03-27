@@ -6,7 +6,6 @@ import vuepressTheme from "@kangc/v-md-editor/lib/theme/vuepress.js";
 import "@kangc/v-md-editor/lib/theme/style/vuepress.css";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import Prism from "prismjs";
-import "prismjs/components/prism-json";
 
 import dotenv from "dotenv";
 
