@@ -6,6 +6,8 @@ import vuepressTheme from "@kangc/v-md-editor/lib/theme/vuepress.js";
 import "@kangc/v-md-editor/lib/theme/style/vuepress.css";
 import * as ElementPlusIconsVue from "@element-plus/icons-vue";
 import Prism from "prismjs";
+import * as Pinia from 'pinia';
+import { Notify } from 'vant';
 
 import dotenv from "dotenv";
 
@@ -19,6 +21,7 @@ const app = createApp(App);
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component);
 }
-
+app.use(Pinia.createPinia());
+app.use(Notify);
 app.use(VMdPreview);
 app.mount("#app");

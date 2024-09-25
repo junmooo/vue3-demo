@@ -4,6 +4,9 @@ const components = require("unplugin-vue-components/webpack");
 const CompressionPlugin = require("compression-webpack-plugin");
 const { ElementPlusResolver } = require("unplugin-vue-components/resolvers");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const { VantResolver } = require('@vant/auto-import-resolver');
+
+
 module.exports = defineConfig({
   // 是否将第三方依赖库翻译成 JS。如果设置为 true，将会编译所有依赖库，可能导致打包体积增大
   transpileDependencies: true,
@@ -23,8 +26,8 @@ module.exports = defineConfig({
     // },
     plugins: [
       new NodePolyfillPlugin(), // 添加 Node.js 兼容的 polyfill
-      AutoImport({ resolvers: [ElementPlusResolver()] }), // 按需引入 element-plus 组件
-      components({ resolvers: [ElementPlusResolver()] }), // 按需引入 element-plus 组件
+      AutoImport({ resolvers: [ElementPlusResolver(),VantResolver()] }), // 按需引入 element-plus 组件
+      components({ resolvers: [ElementPlusResolver(),VantResolver()] }), // 按需引入 element-plus 组件
       new CompressionPlugin({ test: /\.js$|\.html$|\.css/, threshold: 10240 }), // 压缩
     ],
   },
@@ -34,7 +37,7 @@ module.exports = defineConfig({
 
   devServer: {
     allowedHosts: "all", // 允许所有的主机访问开发服务器
-    port: 8088, // 开发服务器的端口
+    port: 8080, // 开发服务器的端口
   },
 
   pluginOptions: {
