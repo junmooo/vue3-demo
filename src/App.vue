@@ -8,8 +8,8 @@
   >
     <div style="position: absolute">
       <!-- <div class="content" :style="{ paddingTop: `${commonStore.getStatusBarHeight()}px`, color: '#f00' }"> -->
-        <!-- 软键盘弹起时隐藏底部导航栏 -->
-        <!-- <template v-if="!commonStore.$state.isKeyboardVisible">
+      <!-- 软键盘弹起时隐藏底部导航栏 -->
+      <!-- <template v-if="!commonStore.$state.isKeyboardVisible">
           <van-tabbar v-model="active" :style="{ paddingBottom: `${commonStore.$state.screenInfo.bottomBarHeight}px` }">
             <van-tabbar-item icon="chat-o">AI对话</van-tabbar-item>
             <van-tabbar-item icon="photo-o">文生图</van-tabbar-item>
@@ -30,7 +30,6 @@
   const commonStore = useCommonStore();
   const active = ref(0);
 
-
   onMounted(() => {
     new Bridge()
       .sendWithResult({
@@ -41,7 +40,11 @@
       });
 
     window.postMessageToJs = (e) => {
-      commonStore.setKeyboardVisible(e.visible)
+      if (e.type === 'isKeyboardVisible') {
+        commonStore.setKeyboardVisible(e.visible);
+      } else if (e.type === 'deviceInfo') {
+        commonStore.setDeviceInfo(e.deviceInfo);
+      }
     };
   });
 </script>
