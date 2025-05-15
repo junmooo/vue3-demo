@@ -1,43 +1,46 @@
 <template>
-  <div
-    class="app-ctn"
-    :style="{
-      paddingTop: `${commonStore.$state.screenInfo.statusBarHeight}px`,
-      height: `${commonStore.$state.screenInfo.screenHeight - commonStore.$state.screenInfo.statusBarHeight}px`,
-    }"
-  >
-    <div style="position: absolute">
-      <!-- <div class="content" :style="{ paddingTop: `${commonStore.getStatusBarHeight()}px`, color: '#f00' }"> -->
-      <!-- 软键盘弹起时隐藏底部导航栏 -->
-      <!-- <template v-if="!commonStore.$state.isKeyboardVisible">
-          <van-tabbar v-model="active" :style="{ paddingBottom: `${commonStore.$state.screenInfo.bottomBarHeight}px` }">
-            <van-tabbar-item icon="chat-o">AI对话</van-tabbar-item>
-            <van-tabbar-item icon="photo-o">文生图</van-tabbar-item>
-            <van-tabbar-item icon="setting-o">标签</van-tabbar-item>
-          </van-tabbar>
-        </template> -->
-      <!-- </div> -->
-      <a-i-chat-dialog v-if="active === 0" />
+  <div class="app-ctn">
+    <div>
+      <login-container v-if="active === 1" @changeActive="changeActive" />
+      <a-i-chat-dialog v-if="active === 0" @changeActive="changeActive" />
+      <a-i-chat-history v-if="active === 2" @changeActive="changeActive" />
     </div>
   </div>
 </template>
 <script setup>
   import { useCommonStore } from '@/stores/common';
   import AIChatDialog from '@/components/AIChatDialog.vue';
+  import LoginContainer from '@/components/LoginContainer.vue';
+  import AIChatHistory from '@/components/AIChatHistory.vue';
   import { ref, onMounted } from 'vue';
   import Bridge from '@/utils/bridge';
 
   const commonStore = useCommonStore();
-  const active = ref(0);
+  const active = ref(2);
+  const sth = ref();
+
+  const changeActive = (val) => {
+    active.value = val;
+  };
 
   onMounted(() => {
-    new Bridge()
-      .sendWithResult({
-        type: 'getStatusBarHeight',
-      })
-      .then((resp) => {
-        commonStore.setScreenInfo(resp);
-      });
+    console.log(navigator.userAgent, 32);
+    sth.value = navigator.userAgent;
+    commonStore.getStatusBarHeight();
+    if (!localStorage.getItem('login-info')) {
+      new Bridge()
+        .sendWithResult({
+          type: 'getUserInfo',
+        })
+        .then((data) => {
+          localStorage.setItem('login-info', JSON.stringify(data?.user));
+          localStorage.setItem('token', data?.token);
+          // active.value = 0;
+        });
+    } else {
+      console.log(47, active.value);
+      // active.value = 2;
+    }
 
     window.postMessageToJs = (e) => {
       if (e.type === 'isKeyboardVisible') {
@@ -57,6 +60,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    // overflow: 'scroll';
 
     .content {
       flex: 1;

@@ -20,11 +20,10 @@
   import { useCommonStore } from '@/stores/common';
 
   const commonStore = useCommonStore();
-
   const computedHeight = computed(() => {
     return (
       commonStore?.$state?.screenInfo?.screenHeight -
-        commonStore.$state.screenInfo.statusBarHeight -
+        commonStore.$state.screenInfo?.statusBarHeight -
         (commonStore?.$state?.screenInfo?.bottomBarHeight ?? 1) -
         134 || 'calc(100vh - 130px)'
     );

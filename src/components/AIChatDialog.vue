@@ -1,40 +1,56 @@
 <template>
-  <div v-loading="loading">
-    <chat-container :messages="messages" />
-    <van-field
-      class="input-ctn"
-      :style="{ bottom: `calc(${computedBottomHeight}px)` }"
-      v-model="question"
-      center
-      clearable
-      type="textarea"
-      placeholder="请输入您的问题"
+  <div :style="{ width: '100vw' }">
+    <van-nav-bar
+      title="AI 对话"
+      left-text="退出登录"
+      left-arrow
+      @click-left="back"
+      @click-right="onClickRight"
+      :style="{ width: '100vw', marginTop: `${commonStore?.statusBarHeight ?? 0}px` }"
+      right-text="历史记录"
+      fixed
+    />
+    <div
+      :style="{
+        height: `calc(100vh - 46px - ${commonStore?.statusBarHeight ?? 0}px)`,
+        overflow: 'scroll',
+        marginTop: `${commonStore?.statusBarHeight + 46 ?? 0}px`,
+      }"
     >
-      <template #button>
-        <van-icon name="guide-o" color="#409EFC" size="2em" @click="websocketSend"/>
-      </template>
-    </van-field>
+      <chat-container :messages="messages" />
+      <van-field
+        class="input-ctn"
+        :style="{ bottom: `calc(${computedBottomHeight}px)` }"
+        v-model="question"
+        center
+        clearable
+        type="textarea"
+        placeholder="请输入您的问题"
+      >
+        <template #button>
+          <van-icon name="guide-o" color="#409EFC" size="2em" @click="send" />
+        </template>
+      </van-field>
+    </div>
   </div>
 </template>
 
 <script setup>
   import ChatContainer from './custom/ChatContainer.vue';
-  import { nextTick, onMounted, ref, onBeforeUnmount, computed } from 'vue';
-  import { AIGC_WS_URL } from '@/api/aigc';
+  import { nextTick, onMounted, ref, onBeforeUnmount, computed, defineEmits } from 'vue';
+  import { AIGC_URL } from '@/api/aigc';
   import { useCommonStore } from '@/stores/common';
+  import { fetchEventSource } from '@microsoft/fetch-event-source';
+  import { showToast } from 'vant';
 
   const commonStore = useCommonStore();
 
-  const timeout = 45 * 1000; // 45秒一次心跳
-  const timeoutObj = ref(null); // 心跳心跳倒计时
-  const serverTimeoutObj = ref(null); // 心跳倒计时
-  const timeoutNum = ref(null); // 断开 重连倒计时
-  const lockReconnect = ref(false); // 防止
-  const websocket = ref(null);
   const question = ref(null);
   const messages = ref({});
   const speaking = ref(false);
   const loading = ref(false);
+  const emit = defineEmits(['changeActive']);
+
   const scrollToBottom = () => {
     nextTick(() => {
       const container = document.getElementById('scroll-box');
@@ -43,121 +59,86 @@
   };
   const computedBottomHeight = computed(() => {
     if (commonStore?.$state?.isKeyboardVisible) return 1;
-    return (commonStore?.$state?.screenInfo?.bottomBarHeight ?? 0);
+    return commonStore?.$state?.screenInfo?.bottomBarHeight ?? 0;
   });
-  const initWebSocket = () => {
-    const uid = JSON.parse(localStorage.getItem('login-info') ?? '{"id":123456}')?.id;
-    // const VUE_APP_USER_ID = 'junmooo-123456';
-    // WebSocket与普通的请求所用协议有所不同，ws等同于http，wss等同于https
-    let wsUrl = `${AIGC_WS_URL}/${uid}`;
-    websocket.value = new WebSocket(wsUrl);
-    websocket.value.onopen = websocketOnOpen;
-    websocket.value.onerror = websocketOnError;
-    websocket.value.onmessage = setOnmessageMessage;
-    websocket.value.onclose = websocketClose;
-    // 监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
-    // window.onbeforeunload = that.onbeforeunload
-  };
 
-  const start = () => {
-    //清除延时器
-    timeoutObj.value && clearTimeout(timeoutObj.value);
-    serverTimeoutObj.value && clearTimeout(serverTimeoutObj.value);
-    timeoutObj.value = setTimeout(() => {
-      if (websocket.value && websocket.value.readyState == 1) {
-        websocket.value.send(JSON.stringify([{ heartBath: 'hi' }])); //发送消息，服务端返回信息，即表示连接良好，可以在socket的onmessage事件重置心跳机制函数
-      } else {
-        reconnect();
-      }
-      //定义一个延时器等待服务器响应，若超时，则关闭连接，重新请求server建立socket连接
-      serverTimeoutObj.value = setTimeout(() => {
-        websocket.value?.close();
-      }, timeout);
-    }, timeout);
-  };
-  const reset = () => {
-    // 重置心跳
-    // 清除时间
-    if (timeoutObj.value && serverTimeoutObj.value) {
-      clearTimeout(timeoutObj.value);
-      clearTimeout(serverTimeoutObj.value);
-    }
-    // 重启心跳
-    start();
-  };
-
-  // 重新连接
-  const reconnect = () => {
-    if (lockReconnect.value) return;
-    lockReconnect.value = true;
-    //没连接上会一直重连，设置延迟避免请求过多
-    timeoutNum.value && clearTimeout(timeoutNum.value);
-    timeoutNum.value = setTimeout(() => {
-      initWebSocket();
-      lockReconnect.value = false;
-    }, 5000);
-  };
-
-  const setOnmessageMessage = async (event) => {
-    if (event.data === '!$over$!') {
-      console.log('这一轮对话结束！');
-      question.value = null;
-    } else if (event.data === 'alive') {
-      console.log('heartBath', 'alive');
-    } else {
-      loading.value = false;
-      console.log(event.data, '获得消息');
-      let { requestId, content } = JSON.parse(event.data);
-      messages.value[requestId] = {
-        question: question.value,
-        answer: content,
-      };
-      scrollToBottom();
-    }
-
-    reset();
-    // 自定义全局监听事件
-    window.dispatchEvent(
-      new CustomEvent('onmessageWS', {
-        detail: {
-          data: event.data,
-        },
-      }),
-    );
-    //发现消息进入    开始处理前端触发逻辑
-    if (event.data === 'success' || event.data === 'heartBath') return;
-  };
-
-  const websocketOnOpen = () => {
-    //开启心跳
-    start();
-    console.log('WebSocket连接成功!!!' + new Date() + '----' + websocket.value?.readyState);
-  };
-  const websocketOnError = (e) => {
-    reset();
-    loading.value = false;
-    console.log('WebSocket连接发生错误' + e);
-  };
-  const websocketClose = () => {
-    websocket.value?.close();
-    timeoutObj.value && clearTimeout(timeoutObj.value);
-    serverTimeoutObj.value && clearTimeout(serverTimeoutObj.value);
-    console.log('WebSocket连接关闭');
-  };
-  const websocketSend = () => {
+  const send = () => {
     speaking.value = true;
     if (question.value?.trim()) {
       loading.value = true;
-      websocket.value?.send(JSON.stringify([...Object.values(messages.value), { question: question.value }]));
+
+      fetchEventSource(`${AIGC_URL}/aigc/t-2-t`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          token: localStorage.getItem('token'),
+        },
+        body: JSON.stringify([...Object.values(messages.value), { question: question.value }]),
+        async onopen(response) {
+          console.log(77, response.headers.get('content-type'));
+
+          if (response.ok) {
+            return; //一切正常
+          } else if (response.status == 403) {
+            showToast({ icon: 'warning-o', message: '登录过期，请重新登录！' });
+            emit('changeActive', 1);
+          } else {
+            throw new Error('服务异常');
+          }
+        },
+        onmessage(msg) {
+          //如果服务器发出错误消息，抛出异常
+          //以便由下面的onerror回调处理：
+          if (msg.event === 'FatalError') {
+            throw new Error(msg.data);
+          }
+          if (msg.data === '!$over$!') {
+            console.log('这一轮对话结束！');
+            question.value = null;
+          } else if (msg.data === 'alive') {
+            console.log('heartBath', 'alive');
+          } else {
+            loading.value = false;
+            console.log(msg.data, '获得消息');
+            let { requestId, content } = JSON.parse(msg.data);
+            messages.value[requestId] = {
+              question: question.value,
+              answer: content,
+            };
+            scrollToBottom();
+          }
+        },
+        onclose() {
+          //如果服务器意外关闭连接，重试：
+          console.log('close！');
+        },
+        onerror(err) {
+          if (err instanceof Error) {
+            throw err; //重新抛出以终止操作
+          } else {
+            //不做任何事，自动重试。也可以在这里返回特定的重试间隔。
+          }
+        },
+      });
     }
   };
 
+  const onClickRight = () => {
+    emit('changeActive', 2);
+  };
+
+  const back = () => {
+    localStorage.removeItem('login-info');
+    localStorage.removeItem('token');
+    emit('changeActive', 1);
+  };
+
   onMounted(() => {
-    initWebSocket(); // userId为socket链接的参数
+    // initWebSocket(); // userId为socket链接的参数
     scrollToBottom();
   });
   onBeforeUnmount(() => {
-    websocket.value?.close();
+    // websocket.value?.close();
   });
 </script>
 <style scoped lang="less">

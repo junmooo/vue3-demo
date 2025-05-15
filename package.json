@@ -11,8 +11,10 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@kangc/v-md-editor": "^2.3.18",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "axios": "^1.7.4",
     "core-js": "^3.8.3",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.3.1",
     "element-plus": "^2.4.3",
     "mini-css-extract-plugin": "^2.7.6",
