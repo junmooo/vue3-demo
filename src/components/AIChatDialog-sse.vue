@@ -14,7 +14,7 @@
       :style="{
         height: `calc(100vh - 46px - ${commonStore?.statusBarHeight ?? 0}px)`,
         overflow: 'scroll',
-        marginTop: `50px`,
+        marginTop: `${commonStore?.statusBarHeight + 46 ?? 0}px`,
       }"
     >
       <chat-container :messages="messages" />
@@ -37,12 +37,11 @@
 
 <script setup>
   import ChatContainer from './custom/ChatContainer.vue';
-  import { nextTick, onMounted, ref, computed, defineEmits } from 'vue';
+  import { nextTick, onMounted, ref, onBeforeUnmount, computed, defineEmits } from 'vue';
   import { AIGC_URL } from '@/api/aigc';
   import { useCommonStore } from '@/stores/common';
   import { fetchEventSource } from '@microsoft/fetch-event-source';
-  import { SLUG, THREAD_SLUG, API_KEY } from '@/config';
-  import { getCharts } from '@/api/anything-llm';
+  import { showToast } from 'vant';
 
   const commonStore = useCommonStore();
 
@@ -68,47 +67,49 @@
     if (question.value?.trim()) {
       loading.value = true;
 
-      const data = {
-        message: question.value,
-        mode: 'query',
-        userId: 1,
-        attachments: [],
-      };
-      fetchEventSource(`${AIGC_URL}/workspace/${SLUG}/thread/${THREAD_SLUG}/stream-chat`, {
+      fetchEventSource(`${AIGC_URL}/aigc/t-2-t`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${API_KEY}`,
+          token: localStorage.getItem('token'),
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify([...Object.values(messages.value), { question: question.value }]),
         async onopen(response) {
+          console.log(77, response.headers.get('content-type'));
+
           if (response.ok) {
             return; //一切正常
+          } else if (response.status == 403) {
+            showToast({ icon: 'warning-o', message: '登录过期，请重新登录！' });
+            emit('changeActive', 1);
           } else {
             throw new Error('服务异常');
           }
         },
         onmessage(msg) {
-          const msgData = JSON.parse(msg.data);
-          if (msgData.close) {
+          //如果服务器发出错误消息，抛出异常
+          //以便由下面的onerror回调处理：
+          if (msg.event === 'FatalError') {
+            throw new Error(msg.data);
+          }
+          if (msg.data === '!$over$!') {
             console.log('这一轮对话结束！');
             question.value = null;
+          } else if (msg.data === 'alive') {
+            console.log('heartBath', 'alive');
           } else {
             loading.value = false;
-            let { uuid: requestId, textResponse: content } = msgData;
-            if (messages.value[requestId]?.question === question.value) {
-              messages.value[requestId].answer += content;
-            } else {
-              messages.value[requestId] = {
-                question: question.value,
-                answer: content,
-              };
-            }
+            console.log(msg.data, '获得消息');
+            let { requestId, content } = JSON.parse(msg.data);
+            messages.value[requestId] = {
+              question: question.value,
+              answer: content,
+            };
             scrollToBottom();
           }
         },
         onclose() {
-          question.value = null;
+          //如果服务器意外关闭连接，重试：
           console.log('close！');
         },
         onerror(err) {
@@ -132,23 +133,12 @@
     emit('changeActive', 1);
   };
 
-  onMounted(async () => {
+  onMounted(() => {
+    // initWebSocket(); // userId为socket链接的参数
     scrollToBottom();
-    const res = await getCharts();
-    messages.value = res.history.reduce((acc, item) => {
-      if (!acc[item.chatId]) {
-        acc[item.chatId] = {
-          question: '',
-          answer: '',
-        };
-      }
-      if (item.role == 'user') {
-        acc[item.chatId].question = item.content;
-      } else {
-        acc[item.chatId].answer = item.content;
-      }
-      return acc;
-    }, {});
+  });
+  onBeforeUnmount(() => {
+    // websocket.value?.close();
   });
 </script>
 <style scoped lang="less">

@@ -47,13 +47,12 @@
   });
   const initWebSocket = () => {
     const uid = JSON.parse(localStorage.getItem('login-info')?.id ?? '{"id":123456}')?.id;
-    // const VUE_APP_USER_ID = 'junmooo-123456';
     // WebSocket与普通的请求所用协议有所不同，ws等同于http，wss等同于https
     let wsUrl = `${AIGC_WS_URL}/${uid}`;
     websocket.value = new WebSocket(wsUrl);
     websocket.value.onopen = websocketOnOpen;
     websocket.value.onerror = websocketOnError;
-    websocket.value.onmessage = setOnmessageMessage;
+    websocket.value.onmessage = setOnMessage;
     websocket.value.onclose = websocketClose;
     // 监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
     // window.onbeforeunload = that.onbeforeunload
@@ -98,7 +97,7 @@
     }, 5000);
   };
 
-  const setOnmessageMessage = async (event) => {
+  const setOnMessage = async (event) => {
     if (event.data === '!$over$!') {
       console.log('这一轮对话结束！');
       question.value = null;
@@ -144,6 +143,7 @@
     initWebSocket(); // userId为socket链接的参数
     scrollToBottom();
   });
+
   onBeforeUnmount(() => {
     websocket.value?.close();
   });

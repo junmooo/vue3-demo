@@ -1,5 +1,6 @@
 import { md5 } from '@/utils/md5';
 import service from './axios';
+import { SLUG, THREAD_SLUG } from '@/config';
 
 // Mock service for testing
 const mockService = {
@@ -32,6 +33,8 @@ export const AIGC_URL = 'http://localhost:3001/api/v1';
 export const IMG_URL = 'https://qingbing.top:6789';
 export const AIGC_WS_URL = 'wss://qingbing.top:7606/ws/res';
 
+
+
 export const text2Img = (params) => {
   return service.post(`${AIGC_URL}/aigc/text-2-img`, params);
 };
@@ -58,6 +61,10 @@ export const getImgUrl = (imgId) => {
 
 export const getDialogueHistory = (params) => {
   return service.get(`${AIGC_URL}/aigc/get-dialogues`, { params });
+};
+
+export const getCharts = () => {
+  return service.get(`http://localhost:3001/api/v1/workspace/${SLUG}/thread/${THREAD_SLUG}/chats`, {headers: { Authorization: `Bearer ${THREAD_SLUG}` }});
 };
 
 export const tasks = (task_id) => {

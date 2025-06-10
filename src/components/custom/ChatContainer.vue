@@ -53,7 +53,7 @@
     flex-direction: column;
     overflow-y: scroll;
     font-size: 12px;
-
+    padding-bottom: 100px;
     .chat-card {
       width: calc(100vw - 30px);
       padding: 0px 15px;

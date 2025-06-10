@@ -31,19 +31,19 @@
             currItem = item;
           "
         >
-          <van-cell>
+          <van-cell v-if="(item.role == user)">
             <template #title>
               <span class="cell-content">
                 <span class="cell-title">Q:</span>
-                {{ `&nbsp;&nbsp; ${item.question}` }}
+                {{ `&nbsp;&nbsp; ${item.content}` }}
               </span>
             </template>
           </van-cell>
-          <van-cell>
+          <van-cell v-if="(item.role == assistant)">
             <template #title>
               <span class="cell-content">
                 <span class="cell-title">A:</span>
-                {{ `&nbsp;&nbsp; ${item.response}` }}
+                {{ `&nbsp;&nbsp; ${item.content}` }}
               </span>
             </template>
           </van-cell>
@@ -77,10 +77,10 @@
   import { showToast } from 'vant';
   import 'vant/es/notify/style';
 
-  import { ref, defineEmits } from 'vue';
+  import { ref, defineEmits, onMounted } from 'vue';
   import { useCommonStore } from '@/stores/common';
   // import { setCookie } from '@/utils/cookie_utils';
-  import { getDialogueHistory } from '@/api/aigc';
+  import { getCharts } from '@/api/anything-llm';
   import dayjs from 'dayjs';
 
   const commonStore = useCommonStore();
@@ -89,42 +89,31 @@
   const list = ref([]);
   const loading = ref(false);
   const finished = ref(false);
-  const pageIndex = ref(0);
-  const pageSize = ref(10);
-  const total = ref(0);
   const showDetailDialog = ref(false);
   const currItem = ref({});
   const stickyCtn = ref(null);
   const onLoad = async () => {
-    pageIndex.value++;
-    loading.value = true;
+
     // 异步更新数据
     // setTimeout 仅做示例，真实场景中一般为 ajax 请求
-    try {
-      const res = await getDialogueHistory({ pageIndex: pageIndex.value, pageSize: pageSize.value });
-
-      if (res.code == 0) {
-        list.value = [...list.value, ...res.data.records];
-        total.value = res.data.total;
-        loading.value = false;
-        if (list.value.length >= res.data.total) {
-          finished.value = true;
-        }
-      } else {
-        loading.value = false;
-        showToast({ icon: 'warning-o', message: res.msg });
-        emit('changeActive', 1);
-      }
-    } catch (error) {
-      loading.value = false;
-      showToast({ type: 'warning-o', message: error });
-      emit('changeActive', 1);
-    }
   };
 
   const back = () => {
     emit('changeActive', 0);
   };
+
+  onMounted(async () => {
+    loading.value = true;
+    try {
+      const res = await getCharts();
+      loading.value = false;
+      list.value = res.history;
+    } catch (error) {
+      // loading.value = false;
+      showToast({ type: 'warning-o', message: error });
+      emit('changeActive', 1);
+    }
+  });
 </script>
 <style scoped lang="less">
   .history-container {

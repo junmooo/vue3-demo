@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_KEY } from '../config';
 
 const service = axios.create({
   baseURL: '/aigc',
@@ -8,7 +9,7 @@ const service = axios.create({
 service.interceptors.request.use(async (config) => {
   const loginInfo = localStorage.getItem('token') ?? '';
   // do something
-  config.headers.Authorization = 'Bearer sk-40f540e96272456288ff6890c06d9913';
+  config.headers.Authorization = `Bearer ${API_KEY}`;
   config.headers['Content-Type'] = 'application/json';
   config.headers['token'] = loginInfo;
   return config;
